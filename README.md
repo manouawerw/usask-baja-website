@@ -22,6 +22,11 @@ Put images in `images/team`, `images/sponsors`, or `images/gallery`.
 
 To move the roadmap's "Now" marker, open `about.html` and put `class="current"` on a different step.
 
+## Dark mode and motion
+- The site follows the visitor's device setting for light or dark. The header button switches it and remembers the choice.
+- Colours are set as variables at the top of `css/style.css`: light first, then the dark-mode overrides.
+- Smooth scrolling and the fade-in as sections scroll into view switch off automatically for visitors whose device asks for reduced motion.
+
 ## Security
 - **Content Security Policy:** only the site's own files may load. Inline scripts, inline styles, and outside resources are all blocked.
 - **No third parties:** fonts (Inter and IBM Plex Mono, both under the SIL Open Font License) are self-hosted, so visitors aren't tracked.

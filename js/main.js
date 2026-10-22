@@ -15,10 +15,60 @@ document.addEventListener("DOMContentLoaded", () => {
   const year = document.getElementById("year");
   if (year) year.textContent = String(new Date().getFullYear());
 
+  setupThemeToggle();
   renderTeam();
   renderSponsors();
   renderGallery();
+  setupReveal();
 });
+
+// Dark/light toggle. Remembers the choice; otherwise follows the device.
+function setupThemeToggle() {
+  const button = document.querySelector(".theme-toggle");
+  if (!button) return;
+  const root = document.documentElement;
+  const prefersDark = window.matchMedia("(prefers-color-scheme: dark)");
+  const current = () => root.dataset.theme || (prefersDark.matches ? "dark" : "light");
+  const label = () => button.setAttribute("aria-label", current() === "dark" ? "Switch to light mode" : "Switch to dark mode");
+
+  button.addEventListener("click", () => {
+    const next = current() === "dark" ? "light" : "dark";
+    root.dataset.theme = next;
+    try {
+      localStorage.setItem("theme", next);
+    } catch {
+      // Storage unavailable: the choice lasts for this page only.
+    }
+    label();
+  });
+  prefersDark.addEventListener("change", label);
+  label();
+}
+
+// Fade content in as it scrolls into view. Skipped for reduced-motion users,
+// and content stays visible if this never runs.
+function setupReveal() {
+  if (!("IntersectionObserver" in window) || window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+  const targets = document.querySelectorAll(
+    ".hero-grid > *, .page-hero .container > *, main section:not(.hero):not(.page-hero) .container > :not(.grid):not(.roadmap):not(.list-grid), .cell, .roadmap li, .list-grid > *"
+  );
+  const observer = new IntersectionObserver((entries) => {
+    for (const entry of entries) {
+      if (!entry.isIntersecting) continue;
+      entry.target.classList.add("in");
+      observer.unobserve(entry.target);
+    }
+  }, { rootMargin: "0px 0px -8% 0px" });
+
+  targets.forEach((target) => {
+    // Stagger siblings in grids and lists slightly
+    const siblings = target.parentElement ? Array.from(target.parentElement.children) : [];
+    const index = Math.min(siblings.indexOf(target), 5);
+    if (index > 0) target.style.transitionDelay = `${index * 70}ms`;
+    target.classList.add("reveal");
+    observer.observe(target);
+  });
+}
 
 // Element helper: el("div", { class: "x" }, child, "text", ...)
 function el(tag, attrs, ...children) {
