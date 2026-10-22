@@ -23,11 +23,13 @@
       <nav class="site-nav" aria-label="Main">
         <ul>
           <li><a href="index.html">Home</a></li>
+          <li><a href="car.html">The Car</a></li>
           <li><a href="about.html">Mission</a></li>
           <li><a href="team.html">Team</a></li>
+          <li><a href="log.html">Build Log</a></li>
           <li><a href="gallery.html">Gallery</a></li>
           <li><a href="sponsors.html">Sponsors</a></li>
-          <li><a href="join.html" aria-current="page">Join &amp; Contact</a></li>
+          <li><a href="join.html" aria-current="page">Join</a></li>
         </ul>
       </nav>
       <div class="header-actions">
@@ -41,7 +43,7 @@
   </header>
 
   <main>
-    <section class="page-hero">
+    <section class="page-hero topo">
       <div class="container">
         <span class="eyebrow">Join &amp; contact</span>
         <h1>Get <em>involved</em>.</h1>
@@ -71,7 +73,16 @@
       </div>
     </section>
 
-    <section class="paper" id="sponsor">
+    <section class="paper">
+      <div class="container">
+        <span class="eyebrow">Not sure where you fit?</span>
+        <h2>Find your sub-team</h2>
+        <p class="lead">Answer three quick questions and we'll suggest where you'd fit best. Every sub-team welcomes beginners.</p>
+        <div class="quiz" id="quiz"></div>
+      </div>
+    </section>
+
+    <section id="sponsor">
       <div class="container split">
         <span class="eyebrow">Partnerships</span>
         <div>
@@ -83,7 +94,7 @@
       </div>
     </section>
 
-    <section>
+    <section class="paper">
       <div class="container split">
         <span class="eyebrow">Contact</span>
         <div>
@@ -95,15 +106,14 @@
     </section>
   </main>
 
-  <footer class="site-footer">
+  <footer class="site-footer topo">
     <div class="container">
       <div>
         <span class="brand-name">USask Baja</span>
         <div>&copy; <span id="year"></span> USask Baja SAE &middot; University of Saskatchewan, Saskatoon</div>
       </div>
-      <nav aria-label="Footer">
+      <nav aria-label="Footer" data-socials>
         <a href="mailto:usaskbaja@ussu.ca">Email</a>
-        <a href="https://discord.gg/B2W6udGJtF" target="_blank" rel="noopener noreferrer">Discord</a>
         <a href="join.html">Join</a>
         <a href="sponsors.html">Sponsor</a>
       </nav>

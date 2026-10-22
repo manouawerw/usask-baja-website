@@ -23,11 +23,13 @@
       <nav class="site-nav" aria-label="Main">
         <ul>
           <li><a href="index.html" aria-current="page">Home</a></li>
+          <li><a href="car.html">The Car</a></li>
           <li><a href="about.html">Mission</a></li>
           <li><a href="team.html">Team</a></li>
+          <li><a href="log.html">Build Log</a></li>
           <li><a href="gallery.html">Gallery</a></li>
           <li><a href="sponsors.html">Sponsors</a></li>
-          <li><a href="join.html">Join &amp; Contact</a></li>
+          <li><a href="join.html">Join</a></li>
         </ul>
       </nav>
       <div class="header-actions">
@@ -41,7 +43,7 @@
   </header>
 
   <main>
-    <section class="hero">
+    <section class="hero topo">
       <div class="container hero-grid">
         <div>
           <span class="eyebrow">University of Saskatchewan &middot; Baja SAE</span>
@@ -69,6 +71,39 @@
     </section>
 
     <section class="paper">
+      <div class="container two-col">
+        <div>
+          <span class="eyebrow">Build tracker</span>
+          <h2>Where the build stands</h2>
+          <p class="lead">Our progress from founding to the start line, updated as we go.</p>
+          <ul class="progress-list" id="progress-list"></ul>
+        </div>
+        <div class="countdown" id="countdown">
+          <span class="eyebrow">Countdown</span>
+          <h3>Competition</h3>
+          <p class="where"></p>
+          <div class="count-grid">
+            <div class="count-cell"><span class="n">--</span><span class="u">Days</span></div>
+            <div class="count-cell"><span class="n">--</span><span class="u">Hours</span></div>
+            <div class="count-cell"><span class="n">--</span><span class="u">Min</span></div>
+            <div class="count-cell"><span class="n">--</span><span class="u">Sec</span></div>
+          </div>
+          <p class="note"></p>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <div class="container">
+        <span class="eyebrow">Spec sheet</span>
+        <h2>The car, by the numbers</h2>
+        <p class="lead">Our first car is still on the drawing board. These numbers fill in as the design is finalized.</p>
+        <div class="spec-grid" data-specs></div>
+        <div class="actions"><a class="btn btn-ghost" href="car.html">Explore the car in 3D</a></div>
+      </div>
+    </section>
+
+    <section class="paper">
       <div class="container">
         <span class="eyebrow">The competition</span>
         <h2>What is Baja SAE?</h2>
@@ -81,7 +116,18 @@
       </div>
     </section>
 
-    <section class="band on-dark">
+    <section>
+      <div class="container split">
+        <span class="eyebrow">Follow the build</span>
+        <div>
+          <p class="statement">Watch the car come together, from the first sketch to race day.</p>
+          <div class="social-list" data-socials></div>
+          <div class="actions"><a class="btn btn-ghost" href="log.html">Read the build log</a></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="band on-dark topo">
       <div class="container">
         <span class="eyebrow">Founding season</span>
         <h2>Be part of the <em>first</em> chapter.</h2>
@@ -94,15 +140,14 @@
     </section>
   </main>
 
-  <footer class="site-footer">
+  <footer class="site-footer topo">
     <div class="container">
       <div>
         <span class="brand-name">USask Baja</span>
         <div>&copy; <span id="year"></span> USask Baja SAE &middot; University of Saskatchewan, Saskatoon</div>
       </div>
-      <nav aria-label="Footer">
+      <nav aria-label="Footer" data-socials>
         <a href="mailto:usaskbaja@ussu.ca">Email</a>
-        <a href="https://discord.gg/B2W6udGJtF" target="_blank" rel="noopener noreferrer">Discord</a>
         <a href="join.html">Join</a>
         <a href="sponsors.html">Sponsor</a>
       </nav>

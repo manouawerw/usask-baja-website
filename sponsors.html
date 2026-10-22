@@ -23,11 +23,13 @@
       <nav class="site-nav" aria-label="Main">
         <ul>
           <li><a href="index.html">Home</a></li>
+          <li><a href="car.html">The Car</a></li>
           <li><a href="about.html">Mission</a></li>
           <li><a href="team.html">Team</a></li>
+          <li><a href="log.html">Build Log</a></li>
           <li><a href="gallery.html">Gallery</a></li>
           <li><a href="sponsors.html" aria-current="page">Sponsors</a></li>
-          <li><a href="join.html">Join &amp; Contact</a></li>
+          <li><a href="join.html">Join</a></li>
         </ul>
       </nav>
       <div class="header-actions">
@@ -41,7 +43,7 @@
   </header>
 
   <main>
-    <section class="page-hero">
+    <section class="page-hero topo">
       <div class="container">
         <span class="eyebrow">Sponsors</span>
         <h1>Our <em>partners</em>.</h1>
@@ -58,6 +60,44 @@
 
     <section class="paper">
       <div class="container">
+        <span class="eyebrow">Logo placement</span>
+        <h2>Where your logo goes</h2>
+        <p class="lead">Hover over or select a tier to see its spot on the car. Placements are a guide, and we finalize them with each partner.</p>
+        <div class="placement" id="placement">
+          <svg viewBox="0 0 800 380" role="img" aria-labelledby="car-diagram-title">
+            <title id="car-diagram-title">Side view of the car showing where each sponsor tier's logo is placed</title>
+            <line class="car-ground" x1="40" y1="348" x2="760" y2="348"/>
+            <!-- sponsor zones -->
+            <polygon class="zone" data-tier="Gold" points="302,182 462,174 540,232 302,228"/>
+            <polygon class="zone" data-tier="Silver" points="482,172 652,180 682,216 556,232"/>
+            <polygon class="zone" data-tier="Bronze" points="294,86 262,222 160,222 158,194"/>
+            <polygon class="zone" data-tier="Supporter" points="304,56 396,56 398,82 302,82"/>
+            <!-- frame and body -->
+            <path class="car-line" d="M150 230 L262 230 L560 240 L690 220 L660 176 L470 166 L400 70 L300 70 L262 230 M300 70 L152 190 L150 230 M262 176 L470 166"/>
+            <path class="car-thin" d="M160 176 h78 v48 h-78 z M292 214 L304 142 M380 120 L420 150 M240 226 L200 280 M560 238 L610 280 M590 200 L612 276"/>
+            <!-- wheels -->
+            <circle class="car-tire" cx="200" cy="280" r="58"/>
+            <circle class="car-rim" cx="200" cy="280" r="26"/>
+            <circle class="car-tire" cx="610" cy="280" r="58"/>
+            <circle class="car-rim" cx="610" cy="280" r="26"/>
+            <!-- labels -->
+            <text class="zone-label" x="370" y="212">GOLD</text>
+            <text class="zone-label" x="560" y="208">SILVER</text>
+            <text class="zone-label" x="196" y="214">BRONZE</text>
+            <text class="zone-label" x="306" y="48">SUPPORTER</text>
+          </svg>
+          <ul class="tier-list">
+            <li><button class="tier-btn" type="button" data-tier="Gold"><strong>Gold</strong><span>Largest logo on both side panels, plus top billing on our website and team apparel.</span></button></li>
+            <li><button class="tier-btn" type="button" data-tier="Silver"><strong>Silver</strong><span>Logo on the nose of the car and our website.</span></button></li>
+            <li><button class="tier-btn" type="button" data-tier="Bronze"><strong>Bronze</strong><span>Logo on the rear panel and our website.</span></button></li>
+            <li><button class="tier-btn" type="button" data-tier="Supporter"><strong>Supporter</strong><span>Name on the roll-cage banner and our sponsors page.</span></button></li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <div class="container">
         <span class="eyebrow">Why partner with us</span>
         <h2>An investment in what's next</h2>
         <div class="grid">
@@ -72,15 +112,14 @@
     </section>
   </main>
 
-  <footer class="site-footer">
+  <footer class="site-footer topo">
     <div class="container">
       <div>
         <span class="brand-name">USask Baja</span>
         <div>&copy; <span id="year"></span> USask Baja SAE &middot; University of Saskatchewan, Saskatoon</div>
       </div>
-      <nav aria-label="Footer">
+      <nav aria-label="Footer" data-socials>
         <a href="mailto:usaskbaja@ussu.ca">Email</a>
-        <a href="https://discord.gg/B2W6udGJtF" target="_blank" rel="noopener noreferrer">Discord</a>
         <a href="join.html">Join</a>
         <a href="sponsors.html">Sponsor</a>
       </nav>
