@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self'; font-src 'self'; connect-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'; upgrade-insecure-requests">
+  <meta name="referrer" content="strict-origin-when-cross-origin">
+  <title>Mission | USask Baja SAE</title>
+  <meta name="description" content="The mission of USask Baja SAE and where we want to go.">
+  <link rel="icon" type="image/png" href="assets/img/favicon.png">
+  <link rel="preload" href="assets/fonts/cormorant-garamond-latin-500-normal.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <header class="site-header">
+    <div class="container">
+      <a class="brand" href="index.html">
+        <img src="assets/img/logo-160.webp" alt="" width="48" height="44">
+        <span class="brand-name">USask Baja<small>SAE Racing</small></span>
+      </a>
+      <button class="nav-toggle" type="button" aria-expanded="false" aria-label="Toggle menu">Menu</button>
+      <nav class="site-nav" aria-label="Main">
+        <ul>
+          <li><a href="index.html">Home</a></li>
+          <li><a href="about.html" aria-current="page">Mission</a></li>
+          <li><a href="team.html">Team</a></li>
+          <li><a href="gallery.html">Gallery</a></li>
+          <li><a href="sponsors.html">Sponsors</a></li>
+          <li><a href="join.html">Join &amp; Contact</a></li>
+        </ul>
+      </nav>
+    </div>
+  </header>
+
+  <main>
+    <section class="page-hero">
+      <div class="container">
+        <span class="eyebrow">Mission</span>
+        <h1>Where we're <em>going</em>.</h1>
+        <p class="lead">We're at the very beginning. Here is what we stand for and where we intend to take this team.</p>
+      </div>
+    </section>
+
+    <section>
+      <div class="container split">
+        <span class="eyebrow">Mission statement</span>
+        <p class="statement">Our mission is to design, build, and race a competitive off-road vehicle, and through that work give University of Saskatchewan students the hands-on engineering, manufacturing, and leadership experience a classroom alone cannot.</p>
+      </div>
+    </section>
+
+    <section class="paper">
+      <div class="container split">
+        <span class="eyebrow">Our vision</span>
+        <div>
+          <p class="statement">To build a lasting, respected Baja SAE program that brings the University of Saskatchewan to the podium and develops engineers ready for industry.</p>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <div class="container">
+        <span class="eyebrow">What we value</span>
+        <h2>Our principles</h2>
+        <div class="grid">
+          <div class="cell"><span class="num">i.</span><h3>Craftsmanship</h3><p>We take pride in work that is designed carefully and built well.</p></div>
+          <div class="cell"><span class="num">ii.</span><h3>Learning</h3><p>No experience required. We teach, document, and pass knowledge forward.</p></div>
+          <div class="cell"><span class="num">iii.</span><h3>Teamwork</h3><p>Engineering, business, and design students working as one crew.</p></div>
+          <div class="cell"><span class="num">iv.</span><h3>Saskatchewan pride</h3><p>Representing USask and our province on a national stage.</p></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="paper">
+      <div class="container">
+        <span class="eyebrow">The road ahead</span>
+        <h2>Our roadmap</h2>
+        <p class="lead">The path from a new team to a competitive program.</p>
+        <!-- To move the "Now" marker, put class="current" on a different <li> -->
+        <ol class="roadmap">
+          <li class="current"><span class="phase">Phase I</span><div><h3>Foundation</h3><p>Recruit founding members, organize sub-teams, and secure our first partners and a place to build.</p></div></li>
+          <li><span class="phase">Phase II</span><div><h3>The first car</h3><p>Design, analyze, and manufacture our first vehicle, then test it on real terrain.</p></div></li>
+          <li><span class="phase">Phase III</span><div><h3>First competition</h3><p>Bring USask to a Baja SAE event, pass technical inspection, and finish the endurance race.</p></div></li>
+          <li><span class="phase">Phase IV</span><div><h3>Contender</h3><p>Refine each design year over year and compete for top results.</p></div></li>
+          <li><span class="phase">Phase V</span><div><h3>Legacy</h3><p>A self-sustaining program with a strong alumni and partner network.</p></div></li>
+        </ol>
+      </div>
+    </section>
+
+    <section class="band on-dark">
+      <div class="container">
+        <span class="eyebrow">Founding season</span>
+        <h2>Be part of the <em>first</em> chapter.</h2>
+        <p>We're a new team, so our first members and partners will help shape everything that follows.</p>
+        <div class="actions">
+          <a class="btn btn-primary" href="join.html">Join the team</a>
+          <a class="btn btn-ghost" href="https://discord.gg/B2W6udGJtF" target="_blank" rel="noopener noreferrer">Join our Discord</a>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <div class="container">
+      <div>
+        <span class="brand-name">USask Baja</span>
+        <div>&copy; <span id="year"></span> USask Baja SAE &middot; University of Saskatchewan, Saskatoon</div>
+      </div>
+      <nav aria-label="Footer">
+        <a href="mailto:usaskbaja@ussu.ca">Email</a>
+        <a href="https://discord.gg/B2W6udGJtF" target="_blank" rel="noopener noreferrer">Discord</a>
+        <a href="join.html">Join</a>
+        <a href="sponsors.html">Sponsor</a>
+      </nav>
+    </div>
+  </footer>
+
+  <script src="js/data.js"></script>
+  <script src="js/main.js"></script>
+</body>
+</html>
