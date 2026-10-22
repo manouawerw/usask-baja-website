@@ -35,7 +35,7 @@ Almost everything is in **`js/data.js`**. Each list has examples to copy:
 Empty lists show a "coming soon" message. Put images in `images/team`, `images/sponsors`, or `images/gallery`.
 
 ## The 3D car
-`car.html` shows a concept buggy built in code (`js/car.js`) with clickable hotspots, an exploded view, and an X-ray mode.
+`car.html` shows a concept buggy built in code (`js/car.js`). It has clickable hotspots, a drive mode (wheels spin and the suspension soaks up terrain), a bump test, an exploded view, an X-ray mode, and frame colour swatches.
 To show your real CAD instead:
 1. Export the model as a **`.glb`** file. SolidWorks, Fusion 360, Onshape, and Blender all support glTF/GLB export, through an add-in if needed. Aim for under 10 MB.
 2. Put it in the `models/` folder.

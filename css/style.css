@@ -797,3 +797,22 @@ a:focus-visible, button:focus-visible {
     80%, 100% { transform: scale(1.5); opacity: 0; }
   }
 }
+
+/* Frame colour swatches */
+.livery { position: absolute; left: 16px; top: 44px; display: flex; align-items: center; gap: 8px; }
+.livery span { font-family: var(--mono); font-size: 0.7rem; letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); margin-right: 2px; }
+.swatch {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  border: 2px solid var(--paper);
+  box-shadow: 0 0 0 1px var(--line);
+  cursor: pointer;
+  padding: 0;
+}
+.swatch[aria-pressed="true"] { box-shadow: 0 0 0 2px var(--champagne); }
+.swatch-green { background: #2c7a2a; }
+.swatch-gold { background: #c9961a; }
+.swatch-black { background: #1e2120; }
+.swatch-white { background: #e6e9e4; }
+@media (max-width: 700px) { .livery { top: auto; bottom: 96px; left: 12px; } }

@@ -55,7 +55,7 @@
       <div class="container">
         <div class="viewer topo" id="car-viewer">
           <div class="hotspot-layer"></div>
-          <p class="viewer-hint" aria-hidden="true">Drag to rotate &middot; Scroll to zoom</p>
+          <p class="viewer-hint" aria-hidden="true">Drag to rotate &middot; Scroll to zoom &middot; Try Drive</p>
           <aside class="part-panel" hidden aria-live="polite">
             <button class="part-close" type="button" aria-label="Close">&times;</button>
             <span class="part-num"></span>
@@ -68,10 +68,19 @@
             </div>
           </aside>
           <div class="viewer-tools" role="toolbar" aria-label="Model controls">
-            <button class="tool" type="button" data-tool="rotate" aria-pressed="true">Auto-rotate</button>
+            <button class="tool" type="button" data-tool="drive" aria-pressed="false">Drive</button>
+            <button class="tool" type="button" data-tool="bump">Bump test</button>
             <button class="tool" type="button" data-tool="explode" aria-pressed="false">Exploded view</button>
             <button class="tool" type="button" data-tool="xray" aria-pressed="false">X-ray</button>
+            <button class="tool" type="button" data-tool="rotate" aria-pressed="true">Auto-rotate</button>
             <button class="tool" type="button" data-tool="reset">Reset view</button>
+          </div>
+          <div class="livery" role="group" aria-label="Frame colour">
+            <span>Frame</span>
+            <button class="swatch swatch-green" type="button" data-livery="#2c7a2a" aria-label="Green" aria-pressed="true"></button>
+            <button class="swatch swatch-gold" type="button" data-livery="#c9961a" aria-label="Gold" aria-pressed="false"></button>
+            <button class="swatch swatch-black" type="button" data-livery="#1e2120" aria-label="Black" aria-pressed="false"></button>
+            <button class="swatch swatch-white" type="button" data-livery="#e6e9e4" aria-label="White" aria-pressed="false"></button>
           </div>
           <div class="viewer-fallback" hidden>
             <p>Your browser can't display 3D graphics, so here's our logo instead.</p>
