@@ -24,7 +24,7 @@ To move the roadmap's "Now" marker, open `about.html` and put `class="current"` 
 
 ## Security
 - **Content Security Policy:** only the site's own files may load. Inline scripts, inline styles, and outside resources are all blocked.
-- **No third parties:** fonts (Cormorant Garamond and Inter, both under the SIL Open Font License) are self-hosted, so visitors aren't tracked.
+- **No third parties:** fonts (Inter and IBM Plex Mono, both under the SIL Open Font License) are self-hosted, so visitors aren't tracked.
 - **No injected markup:** content from `data.js` is added with `textContent` and never as raw HTML. Image paths must sit under `images/`, and links must be `https://`.
 - **Safe external links:** they use `rel="noopener noreferrer"`.
 - **No forms, cookies, or stored data:** there is nothing on the site to attack.
