@@ -41,6 +41,8 @@ To show your real CAD instead:
 2. Put it in the `models/` folder.
 3. In `js/data.js`, set `CAR_MODEL.src` to `"models/your-file.glb"`.
 
+If you edit the concept car in `js/car.js`, run `node tools/check-car.mjs` to check it (Node 18 or newer). It reports any part that floats free of the car or passes through another part. Add a number to check a suspension position too, e.g. `node tools/check-car.mjs 0.1` for full compression.
+
 The model is centred and scaled automatically. To move a hotspot, edit its `anchor` in the `PARTS` list at the top of `js/car.js`.
 The 3D library ([three.js](https://threejs.org), MIT license) is stored in `assets/vendor/three/`, so the site still loads nothing from outside.
 

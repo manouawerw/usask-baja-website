@@ -9,6 +9,7 @@ import { RoundedBoxGeometry } from "../assets/vendor/three/geometries/RoundedBox
 
 const viewer = document.getElementById("car-viewer");
 const REDUCED_MOTION = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+export { buildConceptCar }; // also used by the geometry check in tools/check-car.mjs
 
 // Units are metres. x = forward, y = up, z = sideways (positive = right side).
 const V = (x, y, z) => new THREE.Vector3(x, y, z);
@@ -371,6 +372,7 @@ function buildConceptCar() {
     soot: mat(0x111111, { roughness: 0.9 }),
     light: new THREE.MeshStandardMaterial({ color: 0xff3b30, emissive: 0xff2010, emissiveIntensity: 1.4 })
   };
+  for (const [name, m] of Object.entries(M)) m.name = name;
 
   // A part group that slides by `offset` in exploded view
   const part = (offset) => {
@@ -380,7 +382,15 @@ function buildConceptCar() {
     root.add(g);
     return g;
   };
-  const add = (group, mesh) => { mesh.castShadow = true; mesh.receiveShadow = true; group.add(mesh); return mesh; };
+  // Parts in the same assembly (an engine, a wheel, a seat...) are allowed to overlap in the geometry check
+  let asm = "";
+  const add = (group, mesh) => {
+    mesh.castShadow = true;
+    mesh.receiveShadow = true;
+    mesh.userData.asm = asm;
+    group.add(mesh);
+    return mesh;
+  };
 
   // Straight tube between two points, built at unit length so suspension can stretch it
   const unitTube = {};
@@ -389,6 +399,7 @@ function buildConceptCar() {
     mesh.position.copy(a).add(b).multiplyScalar(0.5);
     mesh.scale.set(1, dir.length(), 1);
     mesh.quaternion.setFromUnitVectors(UP, dir.normalize());
+    mesh.userData.ends ||= [a.clone(), b.clone()]; // tube ends are welded or bolted into other parts
   };
   const tube = (group, a, b, r, material) => {
     unitTube[r] ||= new THREE.CylinderGeometry(r, r, 1, 16);
@@ -412,7 +423,9 @@ function buildConceptCar() {
       from = end;
     }
     path.add(new THREE.LineCurve3(from, pts[pts.length - 1].clone()));
-    return add(group, new THREE.Mesh(new THREE.TubeGeometry(path, pts.length * 28, r, 14), material));
+    const m = add(group, new THREE.Mesh(new THREE.TubeGeometry(path, pts.length * 28, r, 14), material));
+    m.userData.ends = [pts[0].clone(), pts[pts.length - 1].clone()];
+    return m;
   };
   const rbox = (group, size, pos, material, rot = [0, 0, 0], radius = 0.012) => {
     const m = add(group, new THREE.Mesh(new RoundedBoxGeometry(...size, 3, Math.min(radius, Math.min(...size) / 2.01)), material));
@@ -449,72 +462,86 @@ function buildConceptCar() {
     add(group, new THREE.Mesh(new THREE.ExtrudeGeometry(shape, { depth, bevelEnabled: true, bevelThickness: bevel, bevelSize: bevel, bevelSegments: 4, curveSegments: 24 }), material));
 
   // ---- Frame (roll cage)
+  // Every mount below is placed on an actual tube, using onTube() to find the point.
+  asm = "frame";
   const frame = part(V(0, 0, 0));
   const R = 0.016;
   const R2 = 0.013;
   const N = (s) => ({
     A: V(-0.30, 0.22, 0.34 * s), // rear roll hoop, bottom
     G: V(-0.32, 0.62, 0.38 * s), // side impact member, rear
-    J: V(-0.34, 0.95, 0.35 * s), // rear roll hoop, shoulder
+    J: V(-0.34, 0.95, 0.35 * s), // rear roll hoop, shoulder height
     B: V(-0.36, 1.27, 0.29 * s), // roof, rear
     C: V(0.38, 1.27, 0.29 * s), // roof, front
     E: V(0.98, 0.62, 0.24 * s), // front bulkhead, top
     D: V(1.02, 0.29, 0.22 * s), // front bulkhead, bottom
     F: V(1.2, 0.43, 0.14 * s), // nose
-    H: V(-0.95, 0.3, 0.26 * s), // rear box, low
+    H: V(-0.95, 0.22, 0.26 * s), // rear box, low (level with the lower rails)
     I: V(-0.92, 0.78, 0.22 * s) // rear box, high
   });
+  // Point on the tube from p to q where x (or y) reaches the given value
+  const onTube = (p, q, axis, value) => p.clone().lerp(q, (value - p[axis]) / (q[axis] - p[axis]));
   const L = N(-1);
   const Rt = N(1);
+  const side = (s) => (s > 0 ? Rt : L);
   bentTube(frame, [L.A, L.G, L.J, L.B, Rt.B, Rt.J, Rt.G, Rt.A], R, M.frame, 0.09); // rear roll hoop, one bent tube
   const joints = [];
-  for (const n of [L, Rt]) {
+  for (const s of SIDES) {
+    const n = side(s);
     bentTube(frame, [n.B.clone().add(V(0.02, 0, 0)), n.C, n.E], R, M.frame, 0.12); // roof rail into front bracing
-    bentTube(frame, [n.A, n.D, n.F], R, M.frame, 0.08); // lower frame side into nose
+    bentTube(frame, [n.A, n.D, n.F], R, M.frame, 0.08); // lower frame rail into nose
     bentTube(frame, [n.A, n.H, n.I, n.J], R2, M.frame, 0.06); // rear box
     tube(frame, n.G, n.E, R, M.frame); // side impact member
     tube(frame, n.D, n.E, R2, M.frame);
     tube(frame, n.E, n.F, R2, M.frame);
-    tube(frame, n.G, n.H, R2, M.frame);
-    tube(frame, n.J, n.I, R2, M.frame); // shock tower
+    tube(frame, n.G, onTube(n.H, n.I, "y", 0.45), R2, M.frame); // brace to the rear box, above the axle's swing
+    tube(frame, n.J, n.I, R2, M.frame); // rear shock tower
+    tube(frame, onTube(n.A, n.D, "x", 0.55), onTube(n.G, n.E, "x", 0.55), R2, M.frame); // front suspension post
     joints.push(n.G, n.E, n.D, n.H, n.I, n.J);
   }
-  for (const k of ["A", "C", "D", "E", "F", "H", "I", "G"]) tube(frame, L[k], Rt[k], R2, M.frame); // cross members
+  for (const k of ["A", "C", "D", "E", "F", "H", "I", "G", "J"]) tube(frame, L[k], Rt[k], R2, M.frame); // cross members (J = harness bar)
   tube(frame, L.A, Rt.J, R2, M.frame); // rear hoop diagonal
-  tube(frame, V(0.36, 0.25, -0.31), V(0.36, 0.25, 0.31), R2, M.frame);
-  // Small welds where straight tubes meet
+  tube(frame, onTube(L.A, L.D, "x", 0.36), onTube(Rt.A, Rt.D, "x", 0.36), R2, M.frame); // floor cross member
+  const rackBar = [onTube(L.A, L.D, "x", 0.88), onTube(Rt.A, Rt.D, "x", 0.88)];
+  tube(frame, ...rackBar, R2, M.frame); // steering rack cross member
   const weld = new THREE.SphereGeometry(R * 1.12, 14, 10);
   for (const p of joints) add(frame, new THREE.Mesh(weld, M.frame)).position.copy(p);
-  // Front bumper
-  bentTube(frame, [V(1.16, 0.32, -0.2), V(1.27, 0.36, -0.13), V(1.27, 0.36, 0.13), V(1.16, 0.32, 0.2)], R2, M.frame, 0.05);
-  // Brake light, kill switch, fire extinguisher
-  rbox(frame, [0.035, 0.05, 0.14], V(-0.39, 1.2, 0), M.light, [0, 0, 0], 0.01);
-  cyl(frame, 0.018, 0.03, V(-0.33, 1.02, 0.3), M.red, "x");
-  capsule(frame, 0.034, 0.15, V(-0.26, 0.78, -0.27), M.red);
+  // Front bumper, welded to the bottom of the front bulkhead
+  bentTube(frame, [L.D.clone().add(V(0.01, 0, 0)), V(1.22, 0.31, -0.19), V(1.28, 0.34, -0.12), V(1.28, 0.34, 0.12), V(1.22, 0.31, 0.19), Rt.D.clone().add(V(0.01, 0, 0))], R2, M.frame, 0.05);
+  // Brake light hung under the roof hoop, kill switch on the hoop
+  rbox(frame, [0.035, 0.05, 0.14], V(-0.37, 1.229, 0), M.light, [0, 0, 0], 0.01);
+  const killMount = onTube(Rt.J, Rt.B, "y", 1.02);
+  cyl(frame, 0.018, 0.03, killMount.clone().add(V(-0.026, 0, 0)), M.red, "x");
 
   // ---- Body panels
+  asm = "body";
   const body = part(V(0, 0.12, 0));
   const floorLen = Math.hypot(1.02 - -0.3, 0.29 - 0.22);
   plate(body, [[0, -0.335], [floorLen, -0.215], [floorLen, 0.215], [0, 0.335]], 0.006, M.plate,
     V(-0.3, 0.22 - R - 0.001, 0), Math.atan2(0.29 - 0.22, 1.02 - -0.3)); // floor pan, under the lower rails
-  rbox(body, [0.01, 0.68, 0.66], V(-0.305, 0.56, 0), M.plate, [0, 0, 0.02], 0.004); // firewall
+  rbox(body, [0.006, 0.68, 0.66], V(-0.273, 0.56, 0), M.plate, [0, 0, 0], 0.002); // firewall, just ahead of the roll hoop
   const noseTilt = Math.atan2(0.43 - 0.62, 1.2 - 0.98);
   const noseLen = Math.hypot(1.2 - 0.98, 0.43 - 0.62);
   const noseNormal = V(-Math.sin(noseTilt), Math.cos(noseTilt), 0);
   plate(body, [[0, -0.235], [noseLen, -0.135], [noseLen, 0.135], [0, 0.235]], 0.005, M.panel,
     V(0.98, 0.62, 0).addScaledVector(noseNormal, R + 0.006), noseTilt); // nose panel, on top of the tubes
+  // Side panels cover the cockpit only, ending before the front suspension mounts
   const sideTex = makeSideTexture();
   for (const s of SIDES) {
+    asm = `panel${s}`;
     const g = part(V(0, 0.05, 0.32 * s));
     const graphic = mat(0xffffff, { map: sideTex, roughness: 0.38, clearcoat: 0.8, clearcoatRoughness: 0.25 }, true);
-    const face = add(g, new THREE.Mesh(new THREE.PlaneGeometry(1.26, 0.34), graphic)); // front face only, so text never shows mirrored
-    face.position.set(0.33, 0.44, 0.338 * s);
+    const face = add(g, new THREE.Mesh(new THREE.PlaneGeometry(0.77, 0.34), graphic)); // front face only, so text never shows mirrored
+    face.position.set(0.095, 0.44, 0.362 * s);
     face.rotation.y = s > 0 ? 0.107 : Math.PI - 0.107;
-    rbox(g, [1.27, 0.35, 0.008], V(0.33, 0.44, 0.332 * s), M.panel, [0, s > 0 ? 0.107 : -0.107, 0], 0.004);
+    rbox(g, [0.77, 0.34, 0.006], V(0.095, 0.44, 0.358 * s), M.panel, [0, s > 0 ? 0.107 : -0.107, 0], 0.003);
   }
 
   // ---- Cockpit: bucket seat, harness, steering
+  asm = "seat";
   const cockpit = part(V(0, 0.55, 0));
+  const seatX = 0.05; // seat sits forward of the firewall
+  const seatY = -0.01; // and rests on the floor pan
   const shell = new THREE.Shape();
   shell.moveTo(0.2, 0.27);
   shell.lineTo(-0.08, 0.25);
@@ -525,7 +552,7 @@ function buildConceptCar() {
   shell.quadraticCurveTo(-0.11, 0.3, -0.06, 0.3);
   shell.lineTo(0.2, 0.31);
   shell.closePath();
-  extrude(cockpit, shell, 0.4, M.seat, 0.014).position.z = -0.2;
+  extrude(cockpit, shell, 0.4, M.seat, 0.014).position.set(seatX, seatY, -0.2);
   const cushion = new THREE.Shape();
   cushion.moveTo(0.17, 0.31);
   cushion.lineTo(-0.05, 0.31);
@@ -536,75 +563,98 @@ function buildConceptCar() {
   cushion.quadraticCurveTo(-0.05, 0.35, 0.0, 0.35);
   cushion.lineTo(0.17, 0.35);
   cushion.closePath();
-  extrude(cockpit, cushion, 0.3, M.fabric, 0.012).position.z = -0.15;
-  const strap = (a, b, w) => {
-    const m = rbox(cockpit, [w, a.distanceTo(b), 0.004], a.clone().add(b).multiplyScalar(0.5), M.belt, [0, 0, 0], 0.002);
-    m.quaternion.setFromUnitVectors(UP, b.clone().sub(a).normalize());
+  extrude(cockpit, cushion, 0.3, M.fabric, 0.012).position.set(seatX, seatY, -0.15);
+  // Harness strap: a thin belt from a to b, lying flat against `normal`
+  const strap = (a, b, w, normal) => {
+    const y = b.clone().sub(a);
+    const len = y.length();
+    y.normalize();
+    const z = normal.clone().addScaledVector(y, -normal.dot(y)).normalize();
+    const x = y.clone().cross(z);
+    const m = rbox(cockpit, [w, len, 0.004], a.clone().add(b).multiplyScalar(0.5), M.belt, [0, 0, 0], 0.0015);
+    m.quaternion.setFromRotationMatrix(new THREE.Matrix4().makeBasis(x, y, z));
+    m.userData.ends = [a.clone(), b.clone()];
   };
   for (const s of SIDES) {
-    rbox(cockpit, [0.3, 0.1, 0.045], V(0.03, 0.35, 0.19 * s), M.seat, [0, 0, -0.02], 0.02); // cushion bolster
-    rbox(cockpit, [0.045, 0.42, 0.05], V(-0.18, 0.62, 0.19 * s), M.seat, [0, 0, -0.21], 0.02); // back bolster
-    strap(V(-0.24, 0.9, 0.08 * s), V(-0.05, 0.42, 0.05 * s), 0.045); // shoulder belt
-    strap(V(-0.06, 0.36, 0.19 * s), V(0.05, 0.37, 0.04 * s), 0.045); // lap belt
+    rbox(cockpit, [0.3, 0.1, 0.045], V(0.11, 0.34, 0.19 * s), M.seat, [0, 0, -0.02], 0.02); // cushion bolster
+    rbox(cockpit, [0.045, 0.42, 0.05], V(-0.12, 0.6, 0.19 * s), M.seat, [0, 0, 0.22], 0.02); // back bolster
+    // Shoulder belt: from the harness bar, over the seat back, down the front of the seat
+    const over = V(-0.1, 0.88, 0.08 * s);
+    strap(V(-0.33, 0.95, 0.08 * s), over, 0.045, V(0, 1, 0));
+    strap(over, V(0.03, 0.42, 0.06 * s), 0.045, V(1, 0.25, 0));
+    strap(V(0.02 + seatX, 0.365, 0.19 * s), V(0.11 + seatX, 0.375, 0.02 * s), 0.045, V(0, 1, 0)); // lap belt
   }
-  rbox(cockpit, [0.05, 0.05, 0.02], V(0.05, 0.38, 0), M.chrome, [0, 0, 0], 0.008); // buckle
-  // Steering wheel with three spokes and quick release
+  rbox(cockpit, [0.05, 0.012, 0.05], V(0.11 + seatX, 0.377, 0), M.chrome, [0, 0, 0], 0.004); // buckle
+  capsule(cockpit, 0.034, 0.15, V(-0.235, 0.78, -0.27), M.red); // fire extinguisher, mounted on the firewall
+  // Steering: wheel, column down to a rack sitting on its cross member
+  asm = "steering";
+  const rackY = rackBar[0].y + R2 + 0.022;
+  const rackPos = V(0.88, rackY, 0);
+  const wheelCenter = V(0.42, 0.82, 0);
+  const columnEnd = rackPos.clone().add(V(-0.01, 0.022, 0));
+  const columnDir = columnEnd.clone().sub(wheelCenter).normalize();
   const wheelGroup = new THREE.Group();
-  wheelGroup.position.set(0.42, 0.82, 0);
-  wheelGroup.rotation.set(0, Math.PI / 2, 0);
-  wheelGroup.rotateX(-0.45);
+  wheelGroup.position.copy(wheelCenter);
+  wheelGroup.quaternion.setFromUnitVectors(V(0, 0, 1), columnDir); // wheel faces the driver, square to the column
   cockpit.add(wheelGroup);
   add(wheelGroup, new THREE.Mesh(new THREE.TorusGeometry(0.13, 0.017, 16, 64), M.seat));
   for (const a of [Math.PI / 2, Math.PI * 1.17, Math.PI * 1.83]) {
     tube(wheelGroup, V(0, 0, 0), V(Math.cos(a) * 0.125, Math.sin(a) * 0.125, 0), 0.009, M.alu);
   }
-  cyl(wheelGroup, 0.03, 0.03, V(0, 0, -0.015), M.alu);
-  cyl(wheelGroup, 0.022, 0.03, V(0, 0, -0.045), M.red);
-  tube(cockpit, V(0.45, 0.8, 0), V(0.86, 0.42, 0), 0.013, M.chrome); // column
-  cyl(cockpit, 0.022, 0.3, V(0.88, 0.37, 0), M.cast); // steering rack
-  for (const s of SIDES) cyl(cockpit, 0.017, 0.05, V(0.88, 0.37, 0.17 * s), M.rubber); // rack boots
-  for (const s of SIDES) rbox(cockpit, [0.025, 0.09, 0.06], V(0.86, 0.33, 0.08 * s), M.alu, [0, 0, 0.35], 0.006); // pedals
+  cyl(wheelGroup, 0.03, 0.03, V(0, 0, 0.015), M.alu); // hub
+  cyl(wheelGroup, 0.022, 0.03, V(0, 0, 0.045), M.red); // quick release
+  tube(cockpit, wheelCenter.clone().addScaledVector(columnDir, 0.05), columnEnd, 0.013, M.chrome); // column
+  cyl(cockpit, 0.022, 0.3, rackPos, M.cast); // steering rack
+  for (const s of SIDES) cyl(cockpit, 0.017, 0.05, V(0.88, rackY, 0.175 * s), M.rubber); // rack boots
+  asm = "pedals";
+  for (const s of SIDES) rbox(cockpit, [0.025, 0.09, 0.06], V(0.8, 0.31, 0.08 * s), M.alu, [0, 0, 0.35], 0.006);
 
-  // ---- Drivetrain
+  // ---- Drivetrain: engine on a plate across the rear rails
+  asm = "engine";
   const drive = part(V(-0.45, 0.3, 0));
-  rbox(drive, [0.34, 0.012, 0.36], V(-0.72, 0.33, 0), M.plate, [0, 0, 0], 0.004); // engine plate
-  rbox(drive, [0.26, 0.2, 0.26], V(-0.7, 0.45, -0.04), M.engine, [0, 0, 0], 0.025); // crankcase
+  const deck = 0.22 + R2 + 0.006; // top of the engine plate
+  plate(drive, [[0, -0.268], [0.32, -0.305], [0.32, 0.305], [0, 0.268]], 0.006, M.plate, V(-0.88, deck, 0), 0);
+  rbox(drive, [0.24, 0.24, 0.24], V(-0.65, deck + 0.12, -0.03), M.engine, [0, 0, 0], 0.025); // crankcase
   const cylinder = new THREE.Group();
-  cylinder.position.set(-0.62, 0.57, -0.04);
-  cylinder.rotation.z = -0.45;
+  cylinder.position.set(-0.62, deck + 0.24, -0.03);
+  cylinder.rotation.z = -0.3;
   drive.add(cylinder);
   cyl(cylinder, 0.055, 0.16, V(0, 0.08, 0), M.engine, "y");
   for (let i = 0; i < 8; i++) cyl(cylinder, 0.085 - i * 0.002, 0.006, V(0, 0.02 + i * 0.018, 0), M.engine, "y", 28); // cooling fins
   rbox(cylinder, [0.16, 0.05, 0.16], V(0, 0.18, 0), M.engine, [0, 0, 0], 0.012); // head
-  cyl(cylinder, 0.008, 0.05, V(0.06, 0.2, 0), M.chrome, "x"); // spark plug
-  rbox(drive, [0.3, 0.3, 0.06], V(-0.7, 0.5, -0.2), M.shroud, [0, 0, 0], 0.025); // blower shroud
-  cyl(drive, 0.07, 0.02, V(-0.7, 0.5, -0.24), M.shroud); // recoil starter
-  rbox(drive, [0.07, 0.02, 0.02], V(-0.7, 0.5, -0.26), M.red, [0, 0, 0], 0.006);
-  capsule(drive, 0.05, 0.1, V(-0.53, 0.75, -0.12), M.shroud, "z"); // air filter
-  rbox(drive, [0.18, 0.12, 0.16], V(-0.56, 0.8, 0.11), M.tank, [0, 0, 0], 0.03); // fuel tank
-  cyl(drive, 0.022, 0.03, V(-0.56, 0.87, 0.11), M.red, "y"); // fuel cap
-  // Exhaust: header from the cylinder head, over to a muffler, tailpipe out the back
-  bentTube(drive, [V(-0.58, 0.68, -0.13), V(-0.62, 0.8, -0.2), V(-0.76, 0.86, -0.27), V(-0.86, 0.86, -0.27)], 0.019, M.header, 0.06);
-  const muffler = capsule(drive, 0.062, 0.2, V(-0.98, 0.88, -0.27), M.chrome, "x");
-  muffler.rotation.y = 0.08;
-  const shield = add(drive, new THREE.Mesh(new THREE.CylinderGeometry(0.068, 0.068, 0.2, 32, 1, true, -0.4, 2.2), M.shield)); // heat shield
-  shield.rotation.z = Math.PI / 2;
-  shield.position.set(-0.98, 0.88, -0.27);
-  for (const dx of [-0.07, 0.07]) {
-    const band = add(drive, new THREE.Mesh(new THREE.TorusGeometry(0.069, 0.004, 6, 32), M.engine));
-    band.rotation.y = Math.PI / 2;
-    band.position.set(-0.98 + dx, 0.88, -0.27);
-  }
-  bentTube(drive, [V(-1.08, 0.89, -0.27), V(-1.15, 0.9, -0.27), V(-1.2, 0.95, -0.27)], 0.016, M.chrome, 0.04); // tailpipe
-  cyl(drive, 0.019, 0.02, V(-1.205, 0.96, -0.27), M.soot, "y", 20); // sooty tip
-  for (const s of [-0.06, 0.06]) tube(drive, V(-0.98, 0.84, -0.27 + s), V(-0.93, 0.78, -0.22 + s * 0.5), 0.005, M.engine); // hangers
-  // CVT cover: a two-pulley outline, extruded with bevelled edges
-  extrude(drive, stadiumShape(-0.62, 0.44, 0.125, -0.87, 0.34, 0.1), 0.05, M.cvt, 0.012).position.z = 0.13;
+  cyl(cylinder, 0.008, 0.04, V(0, 0.22, 0), M.chrome, "y"); // spark plug
+  rbox(drive, [0.28, 0.3, 0.06], V(-0.65, deck + 0.15, -0.19), M.shroud, [0, 0, 0], 0.025); // blower shroud
+  cyl(drive, 0.07, 0.02, V(-0.65, deck + 0.16, -0.23), M.shroud); // recoil starter
+  rbox(drive, [0.07, 0.02, 0.02], V(-0.65, deck + 0.16, -0.245), M.red, [0, 0, 0], 0.006);
+  rbox(drive, [0.05, 0.05, 0.05], V(-0.53, deck + 0.36, 0.075), M.cast, [0, 0, 0], 0.01); // carburettor
+  capsule(drive, 0.045, 0.07, V(-0.53, deck + 0.36, 0.175), M.shroud, "z"); // air filter
+  // CVT cover from the crankshaft pulley back to the gearbox input pulley
+  extrude(drive, stadiumShape(-0.65, deck + 0.16, 0.11, -0.85, deck + 0.19, 0.09), 0.05, M.cvt, 0.012).position.z = 0.1;
   for (let i = 0; i < 8; i++) {
     const a = (i / 8) * Math.PI * 2;
-    cyl(drive, 0.007, 0.012, V(-0.62 + Math.cos(a) * 0.11, 0.44 + Math.sin(a) * 0.11, 0.195), M.engine, "z", 6);
+    cyl(drive, 0.007, 0.012, V(-0.65 + Math.cos(a) * 0.1, deck + 0.16 + Math.sin(a) * 0.1, 0.168), M.engine, "z", 6);
   }
-  rbox(drive, [0.17, 0.17, 0.22], V(-0.87, 0.33, 0.0), M.cast, [0, 0, 0], 0.03); // gearbox
+  rbox(drive, [0.15, 0.17, 0.22], V(-0.85, deck + 0.085, 0), M.cast, [0, 0, 0], 0.03); // gearbox
+  const axleOut = (s) => V(-0.85, deck + 0.06, 0.11 * s); // gearbox output, below the CVT pulley
+  asm = "tank";
+  rbox(drive, [0.14, 0.11, 0.14], V(-0.35, 0.8, -0.1), M.tank, [0, 0, 0], 0.03); // fuel tank, on the back of the firewall
+  cyl(drive, 0.022, 0.03, V(-0.35, 0.87, -0.1), M.red, "y");
+  // Exhaust, tucked inside the rear frame box: header, muffler, short tailpipe
+  asm = "exhaust";
+  cylinder.updateMatrix();
+  const port = V(-0.075, 0.165, 0).applyMatrix4(cylinder.matrix); // back of the cylinder head
+  const mufflerAt = V(-0.86, deck + 0.36, -0.02);
+  bentTube(drive, [port, V(-0.7, port.y + 0.025, -0.03), V(-0.78, mufflerAt.y + 0.04, -0.03), V(-0.818, mufflerAt.y + 0.01, -0.03)], 0.017, M.header, 0.04);
+  capsule(drive, 0.05, 0.14, mufflerAt, M.chrome, "z");
+  const shield = add(drive, new THREE.Mesh(new THREE.CylinderGeometry(0.056, 0.056, 0.14, 32, 1, true, Math.PI * 0.6, Math.PI * 0.9), M.shield)); // heat shield
+  shield.rotation.x = Math.PI / 2;
+  shield.position.copy(mufflerAt);
+  for (const dz of [-0.05, 0.05]) add(drive, new THREE.Mesh(new THREE.TorusGeometry(0.057, 0.004, 6, 32), M.engine)).position.copy(mufflerAt).add(V(0, 0, dz));
+  const tail = [mufflerAt.clone().add(V(-0.04, 0.005, 0.06)), mufflerAt.clone().add(V(-0.095, 0.015, 0.06)), mufflerAt.clone().add(V(-0.125, 0.05, 0.06))];
+  bentTube(drive, tail, 0.014, M.chrome, 0.03); // tailpipe, just clears the rear of the frame
+  const tipDir = tail[2].clone().sub(tail[1]).normalize();
+  tube(drive, tail[2].clone().addScaledVector(tipDir, -0.008), tail[2].clone().addScaledVector(tipDir, 0.006), 0.0165, M.soot);
+  for (const dz of [-0.06, 0.06]) tube(drive, mufflerAt.clone().add(V(-0.015, 0.045, dz)), V(-0.92, 0.78 - R2 * 0.5, mufflerAt.z + dz), 0.005, M.engine); // hangers to the frame
 
   // ---- Wheels
   const groups = { frame, cockpit, drivetrain: drive };
@@ -614,6 +664,7 @@ function buildConceptCar() {
   const rimGeo = makeRimGeometry();
   const wheelParts = {};
   for (const [x, s] of [[0.74, 1], [0.74, -1], [-0.72, 1], [-0.72, -1]]) {
+    asm = `corner${x > 0 ? "F" : "R"}${s}`;
     const g = part(V(0, 0, 0.42 * s));
     if (x > 0 && s > 0) groups.tires = g;
     const w = new THREE.Group(); // follows suspension travel
@@ -627,23 +678,23 @@ function buildConceptCar() {
     const shoulders = new THREE.InstancedMesh(shoulderGeo, M.rubber, 64);
     const tmp = new THREE.Object3D();
     for (let i = 0; i < 32; i++) {
-      for (const side of [0, 1]) {
-        const a = ((i + side * 0.5) / 32) * Math.PI * 2;
-        tmp.position.set(Math.cos(a) * 0.286, Math.sin(a) * 0.286, side ? 0.045 : -0.045);
-        tmp.rotation.set(side ? 0.38 : -0.38, 0, a, "ZYX"); // chevron tread
+      for (const half of [0, 1]) {
+        const a = ((i + half * 0.5) / 32) * Math.PI * 2;
+        tmp.position.set(Math.cos(a) * 0.286, Math.sin(a) * 0.286, half ? 0.045 : -0.045);
+        tmp.rotation.set(half ? 0.38 : -0.38, 0, a, "ZYX"); // chevron tread
         tmp.updateMatrix();
-        lugs.setMatrixAt(i * 2 + side, tmp.matrix);
-        const b = ((i + 0.25 + side * 0.5) / 32) * Math.PI * 2;
-        tmp.position.set(Math.cos(b) * 0.262, Math.sin(b) * 0.262, side ? 0.1 : -0.1);
-        tmp.rotation.set(side ? -0.5 : 0.5, 0, b, "ZYX");
+        lugs.setMatrixAt(i * 2 + half, tmp.matrix);
+        const b = ((i + 0.25 + half * 0.5) / 32) * Math.PI * 2;
+        tmp.position.set(Math.cos(b) * 0.262, Math.sin(b) * 0.262, half ? 0.1 : -0.1);
+        tmp.rotation.set(half ? -0.5 : 0.5, 0, b, "ZYX");
         tmp.updateMatrix();
-        shoulders.setMatrixAt(i * 2 + side, tmp.matrix);
+        shoulders.setMatrixAt(i * 2 + half, tmp.matrix);
       }
     }
-    for (const inst of [lugs, shoulders]) { inst.castShadow = true; spinner.add(inst); }
+    for (const inst of [lugs, shoulders]) { inst.castShadow = true; inst.userData.asm = asm; spinner.add(inst); }
     add(spinner, new THREE.Mesh(rimGeo.barrel, M.alu));
     add(spinner, new THREE.Mesh(rimGeo.face, M.alu)).position.z = 0.05;
-    cyl(spinner, 0.045, 0.04, V(0, 0, 0.07), M.cast);
+    cyl(spinner, 0.045, 0.13, V(0, 0, 0.025), M.cast); // hub, from the brake rotor out to the rim face
     for (let i = 0; i < 4; i++) {
       const a = (i / 4) * Math.PI * 2 + Math.PI / 4;
       cyl(spinner, 0.008, 0.02, V(Math.cos(a) * 0.03, Math.sin(a) * 0.03, 0.095), M.chrome, "z", 6);
@@ -654,48 +705,67 @@ function buildConceptCar() {
   }
 
   // ---- Suspension, per corner. Arm ends on the wheel side move with suspension travel.
+  const arm = (group, a, b, r, material, ka = 0, kb = 1) => ({ mesh: tube(group, a, b, r, material), a, b, ka, kb });
   for (const s of SIDES) {
+    const n = side(s);
     // Front: double A-arms, upright, coilover, tie rod
+    asm = `cornerF${s}`;
     const front = part(V(0.05, 0, 0.22 * s));
     if (s > 0) groups.front = front;
     const fUpright = new THREE.Group();
     front.add(fUpright);
     rbox(fUpright, [0.06, 0.2, 0.05], V(0.74, 0.31, 0.52 * s), M.cast, [0, 0, 0], 0.012);
+    rbox(fUpright, [0.07, 0.02, 0.02], V(0.8, 0.3, 0.5 * s), M.cast, [0, 0, 0], 0.006); // steering arm
+    cyl(fUpright, 0.022, 0.14, V(0.74, TIRE_R, 0.59 * s), M.cast); // spindle into the hub
+    const lowBall = V(0.74, 0.23, 0.5 * s);
+    const upBall = V(0.74, 0.39, 0.49 * s);
+    const lowRear = onTube(n.A, n.D, "x", 0.6);
+    const lowFront = onTube(n.A, n.D, "x", 0.88);
+    const post = [onTube(n.A, n.D, "x", 0.55), onTube(n.G, n.E, "x", 0.55)];
+    const tabA = lowRear.clone().lerp(lowBall, 0.67);
+    const tabB = lowFront.clone().lerp(lowBall, 0.7);
     const frontArms = [
-      [V(0.6, 0.25, 0.2 * s), V(0.74, 0.23, 0.5 * s), 0.012, M.arm],
-      [V(0.88, 0.26, 0.2 * s), V(0.74, 0.23, 0.5 * s), 0.012, M.arm],
-      [V(0.62, 0.46, 0.23 * s), V(0.74, 0.39, 0.49 * s), 0.012, M.arm],
-      [V(0.86, 0.46, 0.23 * s), V(0.74, 0.39, 0.49 * s), 0.012, M.arm],
-      [V(0.88, 0.37, 0.19 * s), V(0.82, 0.33, 0.5 * s), 0.008, M.chrome] // tie rod
-    ].map(([a, b, r, m]) => ({ mesh: tube(front, a, b, r, m), a, b }));
-    const fCoil = coilover(front, V(0.7, 0.92, 0.27 * s), V(0.74, 0.26, 0.41 * s));
-    corners.push(makeCorner(s, true, wheelParts[`f${s}`], fUpright, frontArms, fCoil, 0.7));
+      arm(front, lowRear, lowBall, 0.012, M.arm),
+      arm(front, lowFront, lowBall, 0.012, M.arm),
+      arm(front, onTube(post[0], post[1], "y", 0.46), upBall, 0.012, M.arm),
+      arm(front, onTube(n.D, n.E, "y", 0.46), upBall, 0.012, M.arm),
+      arm(front, tabA, tabB, 0.01, M.arm, 0.67, 0.7), // shock tab between the lower arms
+      arm(front, V(0.88, rackY, 0.2 * s), V(0.835, 0.3, 0.5 * s), 0.008, M.chrome) // tie rod
+    ];
+    const fCoil = coilover(front, onTube(n.C, n.E, "x", 0.7), tabA.clone().lerp(tabB, 0.5).add(V(0, 0.012, 0)));
+    corners.push(makeCorner(s, true, wheelParts[`f${s}`], fUpright, frontArms, fCoil, 0.685));
 
     // Rear: trailing arm, camber links, coilover, CV axle
+    asm = `cornerR${s}`;
     const rear = part(V(-0.05, 0, 0.22 * s));
     if (s > 0) groups.rear = rear;
     const rUpright = new THREE.Group();
     rear.add(rUpright);
     rbox(rUpright, [0.08, 0.2, 0.05], V(-0.72, 0.31, 0.52 * s), M.cast, [0, 0, 0], 0.012);
+    cyl(rUpright, 0.022, 0.14, V(-0.72, TIRE_R, 0.59 * s), M.cast); // hub stub
+    const hub = V(-0.72, TIRE_R, 0.52 * s);
+    const pivot = onTube(n.A, n.D, "x", -0.24);
     const rearArms = [
-      [V(-0.22, 0.28, 0.35 * s), V(-0.72, 0.29, 0.52 * s), 0.016, M.arm],
-      [V(-0.86, 0.3, 0.22 * s), V(-0.72, 0.25, 0.5 * s), 0.01, M.arm],
-      [V(-0.86, 0.56, 0.2 * s), V(-0.72, 0.4, 0.5 * s), 0.01, M.arm],
-      [V(-0.86, 0.33, 0.1 * s), V(-0.72, 0.29, 0.52 * s), 0.014, M.engine] // CV axle
-    ].map(([a, b, r, m]) => ({ mesh: tube(rear, a, b, r, m), a, b }));
-    const rCoil = coilover(rear, V(-0.64, 0.87, 0.28 * s), V(-0.56, 0.3, 0.46 * s));
-    corners.push(makeCorner(s, false, wheelParts[`r${s}`], rUpright, rearArms, rCoil, 0.68));
+      arm(rear, pivot, hub, 0.016, M.arm), // trailing arm
+      arm(rear, onTube(n.H, n.I, "y", 0.3), V(-0.72, 0.25, 0.5 * s), 0.01, M.arm), // lower camber link
+      arm(rear, onTube(n.H, n.I, "y", 0.56), V(-0.72, 0.4, 0.5 * s), 0.01, M.arm), // upper camber link
+      arm(rear, axleOut(s), hub, 0.014, M.engine) // CV axle
+    ];
+    const shockLow = pivot.clone().lerp(hub, 0.667).add(V(0, 0.016, 0));
+    const rCoil = coilover(rear, onTube(n.J, n.I, "x", -0.64), shockLow);
+    corners.push(makeCorner(s, false, wheelParts[`r${s}`], rUpright, rearArms, rCoil, 0.667));
   }
 
   function makeCorner(s, isFront, wheel, upright, arms, coil, coilRatio) {
     const baseY = wheel.w.position.y;
     const moved = V(0, 0, 0);
+    const moving = V(0, 0, 0);
     return {
       s, front: isFront, x: wheel.x, spinner: wheel.spinner, travel: 0,
       update(t) {
         wheel.w.position.y = baseY + t;
         upright.position.y = t;
-        for (const arm of arms) setTube(arm.mesh, arm.a, moved.copy(arm.b).setY(arm.b.y + t));
+        for (const a of arms) setTube(a.mesh, moving.copy(a.a).setY(a.a.y + t * a.ka), moved.copy(a.b).setY(a.b.y + t * a.kb));
         coil.set(moved.copy(coil.lower).setY(coil.lower.y + t * coilRatio));
       }
     };
@@ -704,6 +774,12 @@ function buildConceptCar() {
   // Coilover shock from a fixed top mount to a lower mount on the arm.
   // The spring is rebuilt along the current length, so it visibly compresses.
   function coilover(group, top, lower) {
+    // Welded mounting tab on the frame tube at the top of the shock
+    const restDir = top.clone().sub(lower).normalize();
+    const shockAsm = asm;
+    asm = "frame";
+    rbox(frame, [0.03, 0.03, 0.03], top.clone().addScaledVector(restDir, -(R + 0.006)), M.frame, [0, 0, 0], 0.006);
+    asm = shockAsm;
     const g = new THREE.Group();
     group.add(g);
     const body = add(g, new THREE.Mesh(new THREE.CylinderGeometry(0.023, 0.023, 1, 20), M.arm));
@@ -722,9 +798,11 @@ function buildConceptCar() {
         const len = dir.length();
         g.position.copy(low);
         g.quaternion.setFromUnitVectors(UP, dir.normalize());
-        body.scale.y = len * 0.55;
-        body.position.y = len * 0.72;
-        reservoir.position.y = len * 0.92;
+        const bodyTop = len - (R + 0.02); // stops at the mounting tab instead of entering the tube
+        body.scale.y = bodyTop - len * 0.42;
+        body.position.y = (bodyTop + len * 0.42) / 2;
+        body.userData.ends = [V(0, len * 0.42, 0), V(0, bodyTop, 0)];
+        reservoir.position.y = bodyTop - 0.03;
         shaft.scale.y = len * 0.5;
         shaft.position.y = len * 0.25;
         if (Math.abs(len - springLen) > 0.0015) {
@@ -767,7 +845,7 @@ function makeTireGeometry() {
 
 // Rim: open barrel plus a face with five spoke windows
 function makeRimGeometry() {
-  const barrel = new THREE.CylinderGeometry(0.152, 0.152, 0.15, 48, 1, true);
+  const barrel = new THREE.CylinderGeometry(0.152, 0.152, 0.21, 48, 1, true); // as wide as the tyre, so the beads seat on it
   barrel.rotateX(Math.PI / 2);
   const face = new THREE.Shape();
   face.absarc(0, 0, 0.15, 0, Math.PI * 2, false);
@@ -788,13 +866,13 @@ function makeRimGeometry() {
 function makeSideTexture() {
   const c = document.createElement("canvas");
   c.width = 1024;
-  c.height = 276;
+  c.height = 452;
   const tex = new THREE.CanvasTexture(c);
   tex.colorSpace = THREE.SRGBColorSpace;
   tex.anisotropy = 8;
   drawSide(c);
   // Redraw once the site fonts have loaded so the lettering matches the site
-  Promise.all([document.fonts.load("700 104px Inter"), document.fonts.load("500 44px 'IBM Plex Mono'")])
+  Promise.all([document.fonts.load("700 190px Inter"), document.fonts.load("500 72px 'IBM Plex Mono'")])
     .then(() => { drawSide(c); tex.needsUpdate = true; })
     .catch(() => {});
   return tex;
@@ -806,23 +884,23 @@ function drawSide(c) {
   g.fillRect(0, 0, c.width, c.height);
   g.strokeStyle = "rgba(168, 216, 154, 0.12)";
   g.lineWidth = 2;
-  for (let i = 0; i < 9; i++) {
+  for (let i = 0; i < 14; i++) {
     g.beginPath();
     for (let x = 0; x <= c.width; x += 16) {
-      const y = 40 + i * 28 + Math.sin(x / 120 + i) * 14 + Math.cos(x / 53 + i * 2) * 6;
+      const y = 36 + i * 30 + Math.sin(x / 120 + i) * 14 + Math.cos(x / 53 + i * 2) * 6;
       x ? g.lineTo(x, y) : g.moveTo(x, y);
     }
     g.stroke();
   }
   g.fillStyle = "#3f8f3a";
-  g.fillRect(0, c.height - 18, c.width, 18);
+  g.fillRect(0, c.height - 26, c.width, 26);
   g.fillStyle = "#f4f5f3";
-  g.font = "700 104px Inter, system-ui, sans-serif";
+  g.font = "700 190px Inter, system-ui, sans-serif";
   g.textBaseline = "middle";
-  g.fillText("USASK", 56, 112);
+  g.fillText("USASK", 60, 180);
   g.fillStyle = "#9fd18f";
-  g.font = "500 40px 'IBM Plex Mono', ui-monospace, monospace";
-  g.fillText("BAJA SAE", 62, 196);
+  g.font = "500 72px 'IBM Plex Mono', ui-monospace, monospace";
+  g.fillText("BAJA SAE", 68, 330);
 }
 
 // Ground contours drawn from the site's topographic map (white lines, tinted by the material).
