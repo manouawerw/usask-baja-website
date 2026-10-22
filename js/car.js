@@ -366,6 +366,9 @@ function buildConceptCar() {
     red: mat(0xc0281f, { roughness: 0.32, clearcoat: 0.8 }, true),
     belt: mat(0xb3261e, { roughness: 0.9, sheen: 0.5 }, true),
     rotor: mat(0x8c918f, { roughness: 0.3, metalness: 1 }),
+    header: mat(0x8a6f55, { roughness: 0.35, metalness: 1, iridescence: 0.6, iridescenceIOR: 1.6 }), // heat-coloured steel
+    shield: mat(0xb9bfbc, { roughness: 0.5, metalness: 0.9, side: THREE.DoubleSide }, true),
+    soot: mat(0x111111, { roughness: 0.9 }),
     light: new THREE.MeshStandardMaterial({ color: 0xff3b30, emissive: 0xff2010, emissiveIntensity: 1.4 })
   };
 
@@ -431,6 +434,17 @@ function buildConceptCar() {
     if (axis === "x") m.rotation.z = Math.PI / 2;
     return m;
   };
+  // Flat sheet-metal plate cut to an outline given as [along, across] points.
+  // The top face sits at the mesh origin and the thickness extends below it.
+  const plate = (group, outline, thickness, material, pos, tilt) => {
+    const shape = new THREE.Shape(outline.map(([u, w]) => new THREE.Vector2(u, w)));
+    const geo = new THREE.ExtrudeGeometry(shape, { depth: thickness, bevelEnabled: false });
+    geo.rotateX(Math.PI / 2); // outline lies flat in x/z, thickness points down
+    const m = add(group, new THREE.Mesh(geo, material));
+    m.position.copy(pos);
+    m.rotation.z = tilt;
+    return m;
+  };
   const extrude = (group, shape, depth, material, bevel = 0.01) =>
     add(group, new THREE.Mesh(new THREE.ExtrudeGeometry(shape, { depth, bevelEnabled: true, bevelThickness: bevel, bevelSize: bevel, bevelSegments: 4, curveSegments: 24 }), material));
 
@@ -480,9 +494,15 @@ function buildConceptCar() {
 
   // ---- Body panels
   const body = part(V(0, 0.12, 0));
-  rbox(body, [1.3, 0.008, 0.6], V(0.36, 0.2, 0), M.plate, [0, 0, 0], 0.003); // floor pan
+  const floorLen = Math.hypot(1.02 - -0.3, 0.29 - 0.22);
+  plate(body, [[0, -0.335], [floorLen, -0.215], [floorLen, 0.215], [0, 0.335]], 0.006, M.plate,
+    V(-0.3, 0.22 - R - 0.001, 0), Math.atan2(0.29 - 0.22, 1.02 - -0.3)); // floor pan, under the lower rails
   rbox(body, [0.01, 0.68, 0.66], V(-0.305, 0.56, 0), M.plate, [0, 0, 0.02], 0.004); // firewall
-  rbox(body, [0.3, 0.008, 0.4], V(1.09, 0.525, 0), M.panel, [0, 0, -0.74], 0.003); // nose panel
+  const noseTilt = Math.atan2(0.43 - 0.62, 1.2 - 0.98);
+  const noseLen = Math.hypot(1.2 - 0.98, 0.43 - 0.62);
+  const noseNormal = V(-Math.sin(noseTilt), Math.cos(noseTilt), 0);
+  plate(body, [[0, -0.235], [noseLen, -0.135], [noseLen, 0.135], [0, 0.235]], 0.005, M.panel,
+    V(0.98, 0.62, 0).addScaledVector(noseNormal, R + 0.006), noseTilt); // nose panel, on top of the tubes
   const sideTex = makeSideTexture();
   for (const s of SIDES) {
     const g = part(V(0, 0.05, 0.32 * s));
@@ -563,8 +583,21 @@ function buildConceptCar() {
   capsule(drive, 0.05, 0.1, V(-0.53, 0.75, -0.12), M.shroud, "z"); // air filter
   rbox(drive, [0.18, 0.12, 0.16], V(-0.56, 0.8, 0.11), M.tank, [0, 0, 0], 0.03); // fuel tank
   cyl(drive, 0.022, 0.03, V(-0.56, 0.87, 0.11), M.red, "y"); // fuel cap
-  bentTube(drive, [V(-0.6, 0.66, -0.13), V(-0.74, 0.74, -0.18), V(-0.9, 0.72, -0.17)], 0.02, M.chrome, 0.06); // header
-  capsule(drive, 0.052, 0.14, V(-0.99, 0.72, -0.17), M.alu, "x"); // muffler
+  // Exhaust: header from the cylinder head, over to a muffler, tailpipe out the back
+  bentTube(drive, [V(-0.58, 0.68, -0.13), V(-0.62, 0.8, -0.2), V(-0.76, 0.86, -0.27), V(-0.86, 0.86, -0.27)], 0.019, M.header, 0.06);
+  const muffler = capsule(drive, 0.062, 0.2, V(-0.98, 0.88, -0.27), M.chrome, "x");
+  muffler.rotation.y = 0.08;
+  const shield = add(drive, new THREE.Mesh(new THREE.CylinderGeometry(0.068, 0.068, 0.2, 32, 1, true, -0.4, 2.2), M.shield)); // heat shield
+  shield.rotation.z = Math.PI / 2;
+  shield.position.set(-0.98, 0.88, -0.27);
+  for (const dx of [-0.07, 0.07]) {
+    const band = add(drive, new THREE.Mesh(new THREE.TorusGeometry(0.069, 0.004, 6, 32), M.engine));
+    band.rotation.y = Math.PI / 2;
+    band.position.set(-0.98 + dx, 0.88, -0.27);
+  }
+  bentTube(drive, [V(-1.08, 0.89, -0.27), V(-1.15, 0.9, -0.27), V(-1.2, 0.95, -0.27)], 0.016, M.chrome, 0.04); // tailpipe
+  cyl(drive, 0.019, 0.02, V(-1.205, 0.96, -0.27), M.soot, "y", 20); // sooty tip
+  for (const s of [-0.06, 0.06]) tube(drive, V(-0.98, 0.84, -0.27 + s), V(-0.93, 0.78, -0.22 + s * 0.5), 0.005, M.engine); // hangers
   // CVT cover: a two-pulley outline, extruded with bevelled edges
   extrude(drive, stadiumShape(-0.62, 0.44, 0.125, -0.87, 0.34, 0.1), 0.05, M.cvt, 0.012).position.z = 0.13;
   for (let i = 0; i < 8; i++) {
