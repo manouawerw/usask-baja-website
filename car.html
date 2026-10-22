@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' blob: data:; font-src 'self'; connect-src 'self' blob:; object-src 'none'; base-uri 'none'; form-action 'none'; upgrade-insecure-requests">
+  <meta name="referrer" content="strict-origin-when-cross-origin">
+  <title>The Car | USask Baja SAE</title>
+  <meta name="description" content="Explore the USask Baja SAE car in interactive 3D.">
+  <link rel="icon" type="image/png" href="assets/img/favicon.png">
+  <link rel="preload" href="assets/fonts/inter-latin-700-normal.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="stylesheet" href="css/style.css">
+  <script src="js/theme.js"></script>
+</head>
+<body>
+  <header class="site-header">
+    <div class="container">
+      <a class="brand" href="index.html">
+        <img class="logo-light" src="assets/img/logo-160.webp" alt="" width="48" height="44">
+        <img class="logo-dark" src="assets/img/logo-160-dark.webp" alt="" width="48" height="44">
+        <span class="brand-name">USask Baja<small>SAE Racing</small></span>
+      </a>
+      <nav class="site-nav" aria-label="Main">
+        <ul>
+          <li><a href="index.html">Home</a></li>
+          <li><a href="car.html" aria-current="page">The Car</a></li>
+          <li><a href="about.html">Mission</a></li>
+          <li><a href="team.html">Team</a></li>
+          <li><a href="log.html">Build Log</a></li>
+          <li><a href="gallery.html">Gallery</a></li>
+          <li><a href="sponsors.html">Sponsors</a></li>
+          <li><a href="join.html">Join</a></li>
+        </ul>
+      </nav>
+      <div class="header-actions">
+        <button class="theme-toggle" type="button" aria-label="Switch colour theme">
+          <svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg>
+          <svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><circle cx="12" cy="12" r="4.5"/><path d="M12 2v2.5M12 19.5V22M4.2 4.2l1.8 1.8M18 18l1.8 1.8M2 12h2.5M19.5 12H22M4.2 19.8L6 18M18 6l1.8-1.8"/></svg>
+        </button>
+        <button class="nav-toggle" type="button" aria-expanded="false" aria-label="Toggle menu">Menu</button>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <section class="page-hero topo">
+      <div class="container">
+        <span class="eyebrow">The car</span>
+        <h1>Meet the <em>machine</em>.</h1>
+        <p class="lead">A concept of our first car, built in 3D. Drag to rotate, scroll or pinch to zoom, and select a numbered point to explore each system.</p>
+      </div>
+    </section>
+
+    <section class="viewer-section">
+      <div class="container">
+        <div class="viewer topo" id="car-viewer">
+          <div class="hotspot-layer"></div>
+          <p class="viewer-hint" aria-hidden="true">Drag to rotate &middot; Scroll to zoom</p>
+          <aside class="part-panel" hidden aria-live="polite">
+            <button class="part-close" type="button" aria-label="Close">&times;</button>
+            <span class="part-num"></span>
+            <h3></h3>
+            <p class="part-text"></p>
+            <p class="part-owner">Built by <span class="part-team"></span></p>
+            <div class="part-actions">
+              <button class="tool part-next" type="button">Next part</button>
+              <a class="tool" href="join.html#quiz">Find your sub-team</a>
+            </div>
+          </aside>
+          <div class="viewer-tools" role="toolbar" aria-label="Model controls">
+            <button class="tool" type="button" data-tool="rotate" aria-pressed="true">Auto-rotate</button>
+            <button class="tool" type="button" data-tool="explode" aria-pressed="false">Exploded view</button>
+            <button class="tool" type="button" data-tool="xray" aria-pressed="false">X-ray</button>
+            <button class="tool" type="button" data-tool="reset">Reset view</button>
+          </div>
+          <div class="viewer-fallback" hidden>
+            <p>Your browser can't display 3D graphics, so here's our logo instead.</p>
+          </div>
+          <noscript><div class="viewer-fallback"><p>Turn on JavaScript to explore the 3D model.</p></div></noscript>
+        </div>
+        <p class="viewer-note">This is a concept model to show the systems we'll design. Our real CAD will replace it once the design is underway.</p>
+      </div>
+    </section>
+
+    <section class="paper">
+      <div class="container">
+        <span class="eyebrow">Spec sheet</span>
+        <h2>By the numbers</h2>
+        <p class="lead">These fill in as the design is finalized.</p>
+        <div class="spec-grid" data-specs></div>
+      </div>
+    </section>
+
+    <section>
+      <div class="container split">
+        <span class="eyebrow">Build it with us</span>
+        <div>
+          <p class="statement">Every system on this car will be designed and built by USask students. Pick the one you want to own.</p>
+          <div class="actions">
+            <a class="btn btn-primary" href="join.html#quiz">Find your sub-team</a>
+            <a class="btn btn-ghost" href="log.html">Follow the build</a>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer topo">
+    <div class="container">
+      <div>
+        <span class="brand-name">USask Baja</span>
+        <div>&copy; <span id="year"></span> USask Baja SAE &middot; University of Saskatchewan, Saskatoon</div>
+      </div>
+      <nav aria-label="Footer" data-socials>
+        <a href="mailto:usaskbaja@ussu.ca">Email</a>
+        <a href="join.html">Join</a>
+        <a href="sponsors.html">Sponsor</a>
+      </nav>
+    </div>
+  </footer>
+
+  <script src="js/data.js"></script>
+  <script src="js/main.js"></script>
+  <script type="module" src="js/car.js"></script>
+</body>
+</html>

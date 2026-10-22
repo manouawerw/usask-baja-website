@@ -679,3 +679,121 @@ a:focus-visible, button:focus-visible {
 }
 
 .statement + .lead { margin-top: 28px; }
+
+/* ---------- 3D car viewer ---------- */
+.viewer-section { padding-top: 56px; }
+.viewer {
+  position: relative;
+  height: min(74vh, 700px);
+  min-height: 460px;
+  border: 1px solid var(--line);
+  background: var(--paper);
+  overflow: hidden;
+  user-select: none;
+  -webkit-user-select: none;
+}
+.viewer canvas { display: block; width: 100%; height: 100%; cursor: grab; touch-action: none; }
+.viewer canvas:active { cursor: grabbing; }
+.hotspot-layer { position: absolute; inset: 0; pointer-events: none; }
+.hotspot {
+  position: absolute;
+  left: -17px;
+  top: -17px;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  border: 1px solid var(--champagne);
+  background: var(--paper);
+  color: var(--champagne);
+  font: 500 0.72rem var(--mono);
+  cursor: pointer;
+  pointer-events: auto;
+  transition: opacity 0.25s, background 0.2s, color 0.2s;
+}
+.hotspot::after {
+  content: "";
+  position: absolute;
+  inset: -6px;
+  border-radius: 50%;
+  border: 1px solid var(--champagne);
+  opacity: 0;
+}
+.hotspot:hover, .hotspot.active { background: var(--champagne); color: var(--paper); }
+.hotspot.faded { opacity: 0.25; }
+.viewer-hint {
+  position: absolute;
+  top: 16px;
+  left: 16px;
+  margin: 0;
+  font-family: var(--mono);
+  font-size: 0.72rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.viewer-tools { position: absolute; left: 16px; bottom: 16px; right: 16px; display: flex; flex-wrap: wrap; gap: 8px; }
+.tool {
+  font-family: var(--mono);
+  font-size: 0.72rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  text-decoration: none;
+  color: var(--ink);
+  background: var(--paper);
+  border: 1px solid var(--line);
+  padding: 10px 14px;
+  cursor: pointer;
+  transition: border-color 0.2s, color 0.2s;
+}
+.tool:hover, .tool[aria-pressed="true"] { border-color: var(--champagne); color: var(--champagne); }
+.part-panel {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  width: min(340px, calc(100% - 32px));
+  background: var(--paper);
+  border: 1px solid var(--line);
+  padding: 24px;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.12);
+}
+.part-panel[hidden] { display: none; }
+.part-num { font-family: var(--mono); font-size: 0.75rem; color: var(--champagne); }
+.part-close {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  width: 32px;
+  height: 32px;
+  font-size: 1.3rem;
+  line-height: 1;
+  color: var(--muted);
+  background: none;
+  border: 0;
+  cursor: pointer;
+}
+.part-close:hover { color: var(--champagne); }
+.part-panel h3 { margin: 8px 0 10px; font-size: 1.35rem; }
+.part-text { color: var(--muted); font-size: 0.95rem; }
+.part-owner { font-size: 0.9rem; margin-bottom: 18px; }
+.part-team { font-weight: 600; color: var(--champagne); }
+.part-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+.viewer-fallback { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; text-align: center; padding: 24px; color: var(--muted); }
+.viewer-fallback[hidden] { display: none; }
+.viewer-note { color: var(--muted); font-size: 0.9rem; margin-top: 16px; }
+@media (max-width: 700px) {
+  .viewer { height: 78vh; }
+  .viewer-hint { display: none; }
+  .part-panel { top: 12px; left: 12px; right: 12px; width: auto; padding: 16px 16px 14px; }
+  .part-panel .part-actions .tool { padding: 8px 10px; }
+  .viewer-tools { left: 12px; right: 12px; bottom: 12px; gap: 6px; }
+  .tool { padding: 8px 10px; font-size: 0.66rem; }
+  .part-panel h3 { font-size: 1.15rem; }
+  .part-text { font-size: 0.88rem; margin-bottom: 10px; }
+}
+@media (prefers-reduced-motion: no-preference) {
+  .hotspot::after { animation: ping 2.4s ease-out infinite; }
+  @keyframes ping {
+    0% { transform: scale(0.8); opacity: 0.7; }
+    80%, 100% { transform: scale(1.5); opacity: 0; }
+  }
+}

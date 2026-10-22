@@ -8,17 +8,41 @@ To preview it, open `index.html` in a browser.
 ## Pages
 | File | Page |
 | --- | --- |
-| `index.html` | Home |
+| `index.html` | Home: build tracker, countdown, spec sheet |
+| `car.html` | Interactive 3D model of the car |
 | `about.html` | Mission, vision, principles, roadmap |
 | `team.html` | Team members |
+| `log.html` | Build log posts |
 | `gallery.html` | Build photos |
 | `sponsors.html` | Sponsors |
-| `join.html` | Join, partnerships, contact |
+| `join.html` | Join, sub-team quiz, partnerships, contact |
 
-## Adding team members, sponsors, or photos
-Edit **`js/data.js`**. Each list starts empty, and an empty list shows a "coming soon" message on its page.
-Copy the example entry, remove the `//`, and fill it in.
-Put images in `images/team`, `images/sponsors`, or `images/gallery`.
+## Updating content
+Almost everything is in **`js/data.js`**. Each list has examples to copy:
+
+| List | What it controls |
+| --- | --- |
+| `TEAM` | Team page |
+| `SPONSORS` | Sponsors page |
+| `GALLERY` | Gallery page |
+| `POSTS` | Build log (newest first) |
+| `PROGRESS` | Build tracker bars on the home page (0–100) |
+| `COMPETITION` | Countdown on the home page (leave `date` empty until it's confirmed) |
+| `SPECS` | Spec sheet (`null` shows "TBD") |
+| `SOCIALS` | Social links in the footer and on the home page (empty values are hidden) |
+| `CAR_MODEL` | Which 3D model The Car page shows |
+
+Empty lists show a "coming soon" message. Put images in `images/team`, `images/sponsors`, or `images/gallery`.
+
+## The 3D car
+`car.html` shows a concept buggy built in code (`js/car.js`) with clickable hotspots, an exploded view, and an X-ray mode.
+To show your real CAD instead:
+1. Export the model as a **`.glb`** file. SolidWorks, Fusion 360, Onshape, and Blender all support glTF/GLB export, through an add-in if needed. Aim for under 10 MB.
+2. Put it in the `models/` folder.
+3. In `js/data.js`, set `CAR_MODEL.src` to `"models/your-file.glb"`.
+
+The model is centred and scaled automatically. To move a hotspot, edit its `anchor` in the `PARTS` list at the top of `js/car.js`.
+The 3D library ([three.js](https://threejs.org), MIT license) is stored in `assets/vendor/three/`, so the site still loads nothing from outside.
 
 To move the roadmap's "Now" marker, open `about.html` and put `class="current"` on a different step.
 
@@ -29,7 +53,7 @@ To move the roadmap's "Now" marker, open `about.html` and put `class="current"` 
 
 ## Security
 - **Content Security Policy:** only the site's own files may load. Inline scripts, inline styles, and outside resources are all blocked.
-- **No third parties:** fonts (Inter and IBM Plex Mono, both under the SIL Open Font License) are self-hosted, so visitors aren't tracked.
+- **No third parties:** fonts (Inter and IBM Plex Mono, under the SIL Open Font License) and the 3D library are self-hosted, so visitors aren't tracked.
 - **No injected markup:** content from `data.js` is added with `textContent` and never as raw HTML. Image paths must sit under `images/`, and links must be `https://`.
 - **Safe external links:** they use `rel="noopener noreferrer"`.
 - **No forms, cookies, or stored data:** there is nothing on the site to attack.

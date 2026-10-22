@@ -90,3 +90,10 @@ const SOCIALS = {
   LinkedIn: "",
   YouTube: ""
 };
+
+// 3D model on The Car page. Leave src as "" to show the concept car.
+// When the team's CAD is ready, export it as a .glb file, put it in the
+// /models folder, and set src, e.g. "models/car.glb".
+const CAR_MODEL = {
+  src: ""
+};
