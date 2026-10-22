@@ -498,14 +498,13 @@ a:focus-visible, button:focus-visible {
   outline-offset: 3px;
 }
 
-/* The logo's black linework needs a light backing on dark backgrounds */
-:root[data-theme="dark"] .hero-logo, :root[data-theme="dark"] .brand img { background: #e8ebe6; border-radius: 4px; }
-:root[data-theme="dark"] .hero-logo { padding: 28px; }
-:root[data-theme="dark"] .brand img { padding: 3px; }
+/* Each logo has a light-mode and a dark-mode version; show the one matching the theme */
+.logo-dark { display: none; }
+:root[data-theme="dark"] .logo-light { display: none; }
+:root[data-theme="dark"] .logo-dark { display: block; }
 @media (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"]) .hero-logo, :root:not([data-theme="light"]) .brand img { background: #e8ebe6; border-radius: 4px; }
-  :root:not([data-theme="light"]) .hero-logo { padding: 28px; }
-  :root:not([data-theme="light"]) .brand img { padding: 3px; }
+  :root:not([data-theme="light"]) .logo-light { display: none; }
+  :root:not([data-theme="light"]) .logo-dark { display: block; }
 }
 
 /* ---------- Motion ---------- */
